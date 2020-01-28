@@ -1,7 +1,7 @@
 from typing import Optional, Type, Union
-from flask_restx import fields as fr
+from flask_restplus import fields as fr
 from marshmallow import fields as ma
-from marshmallow.schema import Schema, SchemaMeta
+from marshmallow_mongoengine.schema import ModelSchema, SchemaMeta
 import uuid
 
 
@@ -43,12 +43,12 @@ def unpack_nested_self(val, api, model_name: str = None, operation: str = "dump"
 
 def for_swagger(schema, api, model_name: str = None, operation: str = "dump"):
     """
-    Convert a marshmallow schema to equivalent Flask-restx model
+    Convert a marshmallow schema to equivalent Flask-RESTplus model
 
     Args:
         schema (Marshmallow Schema): Schema defining the inputs
-        api (Namespace): Flask-restx namespace (necessary for context)
-        model_name (str): Name of Flask-restx model
+        api (Namespace): Flask-RESTplus namespace (necessary for context)
+        model_name (str): Name of Flask-RESTplus model
 
     Returns:
         api.model: An equivalent api.model
@@ -134,7 +134,7 @@ type_map.update(
     {
         ma.List: unpack_list,
         ma.Nested: unpack_nested,
-        Schema: for_swagger,
+        ModelSchema: for_swagger,
         SchemaMeta: for_swagger,
     }
 )
@@ -142,13 +142,13 @@ type_map.update(
 num_default_models = 0
 
 
-def get_default_model_name(schema: Optional[Union[Schema, Type[Schema]]] = None) -> str:
+def get_default_model_name(schema: Optional[Union[ModelSchema, Type[ModelSchema]]] = None) -> str:
     if schema:
-        if isinstance(schema, Schema):
-            return "".join(schema.__class__.__name__.rsplit("Schema", 1))
+        if isinstance(schema, ModelSchema):
+            return "".join(schema.__class__.__name__.rsplit("ModelSchema", 1))
         else:
             # It is a type itself
-            return "".join(schema.__name__.rsplit("Schema", 1))
+            return "".join(schema.__name__.rsplit("ModelSchema", 1))
 
     global num_default_models
     name = f"DefaultResponseModel_{num_default_models}"
@@ -180,7 +180,8 @@ def map_type(val, api, model_name, operation):
     if value_type in type_map:
         return type_map[value_type](val, api, model_name, operation)
 
-    if isinstance(value_type, SchemaMeta) or isinstance(value_type, Schema):
-        return type_map[Schema](val, api, model_name, operation)
+    if isinstance(value_type, SchemaMeta) or isinstance(value_type, ModelSchema):
+        return type_map[ModelSchema](val, api, model_name, operation)
 
     raise TypeError('Unknown type for marshmallow model field was used.')
+
